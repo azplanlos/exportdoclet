@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -116,13 +117,13 @@ public class ExportRenderer {
     private void outputText(List<? extends Element> elements, PrintWriter writer) {
         for (Element element : elements) {
             outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, 2,
-                    element.getKind());
+                    element.getKind(), element.toString());
         }
     }
 
     private void outputText(Element element, PrintWriter writer, int level) {
         outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, level,
-                element.getKind());
+                element.getKind(), element.toString());
     }
 
     /**
@@ -133,10 +134,10 @@ public class ExportRenderer {
      * @param comment the javadoc comment to export
      * @param writer the link:PrintWriter[] to be used to export the javadoc comment to an AsciiDoc file
      */
-    private void outputText(String tag, String comment, PrintWriter writer, int level, ElementKind kind) {
+    private void outputText(String tag, String comment, PrintWriter writer, int level, ElementKind kind, String fullname) {
         writer.println("// tag::" + tag + "[]");
         if (includeCaptions) {
-            writer.println(String.format("%s %s %s\n", ("=".repeat(level)), kind.toString(), tag));
+            writer.println(String.format("%s %s %s\n", ("=".repeat(level)), kind.toString(), fullname));
         }
         writer.println(cleanJavadocInput(comment));
         writer.println("// end::" + tag + "[]");
@@ -168,7 +169,7 @@ public class ExportRenderer {
         }
 
         File file = new File(packageDirectory, name + ".adoc");
-        return new PrintWriter(new OutputStreamWriter(new FileOutputStream(file)));
+        return new PrintWriter(new FileOutputStream(file), false, StandardCharsets.UTF_8);
     }
 
     private String getPackageName(Element element) {
