@@ -59,16 +59,16 @@ public class ExportRenderer {
      */
     public boolean render() {
         DocTrees treeUtils = rootDoc.getDocTrees();
-        renderRootElements(rootDoc.getSpecifiedElements());
+        renderRootElements(treeUtils, rootDoc.getSpecifiedElements());
         return true;
     }
 
-    private void renderRootElements(Set<? extends Element> elements) {
+    private void renderRootElements(DocTrees treeUtils, Set<? extends Element> elements) {
         for(Element typeElement : ElementFilter.typesIn(elements)) {
-            renderType(typeElement);
+            renderType(treeUtils, typeElement);
         }
         for(Element packageElement : ElementFilter.packagesIn(elements)) {
-            renderPackage(packageElement);
+            renderPackage(treeUtils, packageElement);
         }
     }
 
@@ -77,9 +77,9 @@ public class ExportRenderer {
      *
      * @param element the class documentation object
      */
-    private void renderType(Element element) {
+    private void renderType(DocTrees treeUtils, Element element) {
         try (PrintWriter writer = getWriter(getPackageName(element), element.getSimpleName().toString())) {
-            renderEnclosedElements(element, writer);
+            renderEnclosedElements(treeUtils, element, writer);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -90,39 +90,40 @@ public class ExportRenderer {
      *
      * @param packageElement the package documentation object
      */
-    private void renderPackage(Element packageElement){
+    private void renderPackage(DocTrees treeUtils, Element packageElement){
         try (PrintWriter writer = getWriter(getPackageName(packageElement), "package-info")) {
-            renderEnclosedElements(packageElement, writer);
+            renderEnclosedElements(treeUtils, packageElement, writer);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private void renderEnclosedElements(Element rootElement, PrintWriter writer) {
-        outputText(rootElement, writer, 1);
+    private void renderEnclosedElements(DocTrees treeUtils, Element rootElement, PrintWriter writer) {
+        outputText(treeUtils, rootElement, writer, 1);
 
-        renderRootElements(new HashSet<>(rootElement.getEnclosedElements()));
+        renderRootElements(treeUtils, new HashSet<>(rootElement.getEnclosedElements()));
 
         Set<Element> subElements = new HashSet<>(rootElement.getEnclosedElements());
         subElements.removeAll(ElementFilter.typesIn(rootElement.getEnclosedElements()));
         subElements.removeAll(ElementFilter.packagesIn(rootElement.getEnclosedElements()));
 
+
         for(Element subElement : subElements) {
-            outputText(subElement, writer, 2);
+            outputText(treeUtils, subElement, writer, 2);
         }
 
         writer.flush();
     }
 
-    private void outputText(List<? extends Element> elements, PrintWriter writer) {
+    private void outputText(DocTrees treeUtils, List<? extends Element> elements, PrintWriter writer) {
         for (Element element : elements) {
             outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, 2,
                     element.getKind(), element.toString());
         }
     }
 
-    private void outputText(Element element, PrintWriter writer, int level) {
-        outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, level,
+    private void outputText(DocTrees treeUtils, Element element, PrintWriter writer, int level) {
+        outputText(element.getSimpleName().toString(), treeUtils.getDocComment(treeUtils.getPath(element)), writer, level,
                 element.getKind(), element.toString());
     }
 
