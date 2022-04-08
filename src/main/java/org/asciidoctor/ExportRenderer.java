@@ -15,6 +15,7 @@
  */
 package org.asciidoctor;
 
+import com.sun.source.util.DocTrees;
 import jdk.javadoc.doclet.*;
 
 import javax.lang.model.element.*;
@@ -56,6 +57,7 @@ public class ExportRenderer {
      * @return true if successful, false otherwise
      */
     public boolean render() {
+        DocTrees treeUtils = rootDoc.getDocTrees();
         renderRootElements(rootDoc.getSpecifiedElements());
         return true;
     }
@@ -96,7 +98,7 @@ public class ExportRenderer {
     }
 
     private void renderEnclosedElements(Element rootElement, PrintWriter writer) {
-        outputText(rootElement, writer);
+        outputText(rootElement, writer, 1);
 
         renderRootElements(new HashSet<>(rootElement.getEnclosedElements()));
 
@@ -105,7 +107,7 @@ public class ExportRenderer {
         subElements.removeAll(ElementFilter.packagesIn(rootElement.getEnclosedElements()));
 
         for(Element subElement : subElements) {
-            outputText(subElement, writer);
+            outputText(subElement, writer, 2);
         }
 
         writer.flush();
@@ -113,12 +115,14 @@ public class ExportRenderer {
 
     private void outputText(List<? extends Element> elements, PrintWriter writer) {
         for (Element element : elements) {
-            outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer);
+            outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, 2,
+                    element.getKind());
         }
     }
 
-    private void outputText(Element element, PrintWriter writer) {
-        outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer);
+    private void outputText(Element element, PrintWriter writer, int level) {
+        outputText(element.getSimpleName().toString(), rootDoc.getElementUtils().getDocComment(element), writer, level,
+                element.getKind());
     }
 
     /**
@@ -129,13 +133,14 @@ public class ExportRenderer {
      * @param comment the javadoc comment to export
      * @param writer the link:PrintWriter[] to be used to export the javadoc comment to an AsciiDoc file
      */
-    private void outputText(String tag, String comment, PrintWriter writer) {
+    private void outputText(String tag, String comment, PrintWriter writer, int level, ElementKind kind) {
         writer.println("// tag::" + tag + "[]");
         if (includeCaptions) {
-            writer.println(String.format("== %s", tag));
+            writer.println(String.format("%s %s %s\n", ("=".repeat(level)), kind.toString(), tag));
         }
         writer.println(cleanJavadocInput(comment));
         writer.println("// end::" + tag + "[]");
+        writer.println();
     }
 
     private String cleanJavadocInput(String input) {
